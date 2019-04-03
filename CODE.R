@@ -1,4 +1,4 @@
-rm(list = ls(all = TRUE))
+rm(list = ls())
 library(dplyr)
 library(simPH)
 library(riskRegression)
@@ -68,25 +68,12 @@ df = data.table(df)
 data = data[-which(abs(data$ROE)>1000),]
 data = df
 
-# fixed_effects_names = colnames(data)[7:22]
-# random_effects_names = colnames(data)[23:24]
-
-
-# ggpairs(data[, 7:22])
-# ggpairs(X)
-
-
-# f = formula(paste("y ~ 1 +", paste(fixed_effects_names, collapse = "+")))
-#TiempoOper + I(TiempoOper^2) + ICV*EFI_OPER +
-
-
 
 f = STATUS2 ~1 + ROA + ROE + ICVN + ICV + EFI_OPER + LIQUIDEZ_ACTIVOS + APALANC +
   TASA_A_IMP + TASA_P_IMP + TASA_DE_EQUILIBRIO + RAZON_GADMON_CCT + RENTABILIDAD_CARTERA +
   RAZON_MARGEN_FIN + RAZON_MARGEN_FIN_AJU + RAZON_MARGEN_OP + RAZON_MARGEN_NETO + 
   RAZON_CCFIRA_CCT + ICAP + TiempoOper + I(TiempoOper^2) + 
   f(CLAVE, model="ar1")
-
 
 modelo = inla(f, data=data, 
               family="binomial", 
