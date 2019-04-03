@@ -144,12 +144,6 @@ multiplot(g1, g2)
 dev.off()
 
 #=====================================================
-# Guardar datos.
-# data$Survival_prob = 1-probabilidades_tr
-# write.csv(data, file = "Estimated_Surv_Prob.csv", row.names = FALSE)
-                    
-                    
-#=====================================================
 ## Validacion en testing
 id_tst = which(!is.na(match(df$mes, c(1,2,4,5,7,8,10,11) )))
 data_tst = df[id_tst,]
@@ -169,12 +163,8 @@ precision(prob_def, data_tst$STATUS2)
 
 #=====================================================
 ## Usamos modelo entrenado en full dataset
+X = model.matrix(f, data = df)
 betas = EFECTOS$EFECTO
-X = model.matrix(STATUS2 ~ 1 + ROA + ROE + ICVN + ICV + EFI_OPER + LIQUIDEZ_ACTIVOS + 
-                   APALANC + TASA_A_IMP + TASA_P_IMP + TASA_DE_EQUILIBRIO + 
-                   RAZON_GADMON_CCT + RENTABILIDAD_CARTERA + RAZON_MARGEN_FIN + 
-                   RAZON_MARGEN_FIN_AJU + RAZON_MARGEN_OP + RAZON_MARGEN_NETO + 
-                   RAZON_CCFIRA_CCT + ICAP + TiempoOper + I(TiempoOper^2), data = df)# as.matrix(cbind(1, df[,c(10, 11, 12, 13)]))
 reffect = df %>% select("CLAVE") %>% left_join(random_effects, by = "CLAVE") 
 reffect = reffect$mean
 eta_i = as.vector( X %*% betas + reffect)
@@ -288,7 +278,6 @@ cross_validation = function(clave){
   xlsx::write.xlsx(data_surv, file = paste0("Efectos_without_", clave, ".xlsx"), sheetName="Survival",
                  col.names=TRUE, row.names=FALSE, append=TRUE)
 
-  # auc_tst = auc(response = as.vector(y_tst), predictor = as.vector(prob_def))[[1]]
   precision_tst = precision(prob_def, y_tst, threshold=0.5)
   
   return(resultado = c(auc_tr, precision_tr,  precision_tst))
