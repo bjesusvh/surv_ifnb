@@ -23,10 +23,10 @@ setwd(current_dir)
 source("Multiplot.R")
 #===========================================================
 # If prob > 0.5 then 1, else 
-precision = function(probs_mod, respuesta, threshold=0.5){
+precision <- function(probs_mod, respuesta, threshold=0.5){
   results <- ifelse(probs_mod > threshold, 1, 0)
   misClasificError <- mean(respuesta != results)
-  acc <- 1-misClasificError
+  acc <- 1 - misClasificError
   # prec = round(acc*100 ,3)
   print(paste("precision = ", round(acc*100,3), "%"))
 }
@@ -42,25 +42,25 @@ precision = function(probs_mod, respuesta, threshold=0.5){
 # data$RENTABILIDAD_CARTERA = as.numeric(as.character(data$RENTABILIDAD_CARTERA))
 
 # saveRDS(data, file = "data_cleaned_final_V4.rds")
-df = readRDS(file = "data_cleaned_final_V4.rds")
+df <- readRDS(file = "data_cleaned_final_V4.rds")
 
 
-times = read_excel("INICIO_OPERACIONES_IFNB - CLEAN.xlsx",
+times <- read_excel("INICIO_OPERACIONES_IFNB - CLEAN.xlsx",
                    sheet = 2)
 
-times = times %>% select("CLAVE_IF", "DATE_INICIO")
+times <- times %>% select("CLAVE_IF", "DATE_INICIO")
 colnames(times)[1] <- "CLAVE"
 
 
-df = df %>% left_join(times, by = "CLAVE")
-df = df %>% mutate(CURRENT_DATE = ymd(paste0(anio,"-", mes,"-15")))
-df = df %>% mutate(INT = interval(DATE_INICIO,CURRENT_DATE))
-df = df %>% mutate(TiempoOper = INT %/% months(1))
+df <- df %>% left_join(times, by = "CLAVE")
+df <- df %>% mutate(CURRENT_DATE = ymd(paste0(anio,"-", mes,"-15")))
+df <- df %>% mutate(INT = interval(DATE_INICIO,CURRENT_DATE))
+df <- df %>% mutate(TiempoOper = INT %/% months(1))
 df$TiempoOper <- df$TiempoOper/365  # in years.
-df = df %>% select(-INT)
+df <- df %>% select(-INT)
 
 
-df = data.table(df)
+df <- data.table(df)
 
 
 # data = df %>% filter( mes %in% c(3,6,9,12) )
@@ -73,26 +73,26 @@ f = STATUS2 ~1 + ROA + ROE + ICVN + ICV + EFI_OPER + LIQUIDEZ_ACTIVOS + APALANC 
   TASA_A_IMP + TASA_P_IMP + TASA_DE_EQUILIBRIO + RAZON_GADMON_CCT + RENTABILIDAD_CARTERA +
   RAZON_MARGEN_FIN + RAZON_MARGEN_FIN_AJU + RAZON_MARGEN_OP + RAZON_MARGEN_NETO + 
   RAZON_CCFIRA_CCT + ICAP + TiempoOper + I(TiempoOper^2) + 
-  f(CLAVE, model="ar1")
+  f(CLAVE, model = "ar1")
 
-modelo = inla(f, data=data, 
-              family="binomial", 
-              Ntrials=1,
-              control.predictor=list(compute=TRUE),
+modelo = inla(f, data = data, 
+              family = "binomial", 
+              Ntrials = 1,
+              control.predictor = list(compute=TRUE),
               control.family = list(link = "probit"),
               control.compute = list(dic = TRUE, waic = TRUE))
 
 autoplot(modelo) #, which = c(1, 5), CI = TRUE)
 modelo$waic$waic  #The lower AIC score signals a better model.
 
-random_effects = modelo$summary.random$CLAVE
-random_effects = as.data.frame(random_effects %>% select(ID, mean, `0.025quant`, `0.975quant`) )
-colnames(random_effects)[1] = "CLAVE"
+random_effects <- modelo$summary.random$CLAVE
+random_effects <- as.data.frame(random_effects %>% select(ID, mean, `0.025quant`, `0.975quant`) )
+colnames(random_effects)[1] <- "CLAVE"
 
-random_effects1 = random_effects[which(random_effects$mean > 0.5),]
+random_effects1 <- random_effects[which(random_effects$mean > 0.5),]
 
 
-(g3 =   ggplot(random_effects1, aes(fct_reorder(as.factor(CLAVE) , mean), mean )) + 
+(g3 <-   ggplot(random_effects1, aes(fct_reorder(as.factor(CLAVE) , mean), mean )) + 
   geom_point(stat="identity", aes(color = mean), size=5) + 
   geom_errorbar(width=.25, aes(ymin=`0.025quant`, ymax=`0.975quant`))+
   geom_hline(yintercept = 0, col="red")+
@@ -102,12 +102,12 @@ random_effects1 = random_effects[which(random_effects$mean > 0.5),]
         axis.text.y = element_text(size=8 )) + coord_flip()
 )
 
-EFECTOS = as.data.frame(modelo$summary.fixed)
-EFECTOS = EFECTOS %>% rownames_to_column()
-colnames(EFECTOS) = c("VARIABLE", "EFECTO", "STD_ERROR", "CI",  "0.5_q", "CS", "MODE", "KLD")
-probabilidades_tr = modelo$summary.fitted.values$mean
-mean_prob = mean(probabilidades_tr)
-EFECTOS = EFECTOS %>% mutate(marg_prob = mean_prob*EFECTO*100)
+EFECTOS <- as.data.frame(modelo$summary.fixed)
+EFECTOS <- EFECTOS %>% rownames_to_column()
+colnames(EFECTOS) <- c("VARIABLE", "EFECTO", "STD_ERROR", "CI",  "0.5_q", "CS", "MODE", "KLD")
+probabilidades_tr <- modelo$summary.fitted.values$mean
+mean_prob <- mean(probabilidades_tr)
+EFECTOS <- EFECTOS %>% mutate(marg_prob = mean_prob*EFECTO*100)
 
 
 auc(response = data$STATUS2, predictor = probabilidades_tr)
